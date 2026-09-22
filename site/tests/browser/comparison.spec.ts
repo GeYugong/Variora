@@ -2,9 +2,19 @@ import { test, expect } from "./fixtures/giscus";
 import { readFile } from "node:fs/promises";
 import catalog from "../../.generated/catalog.json";
 
-const models = catalog
-  .find((project) => project.id === "rainy-ramen")!
-  .models.filter((model) => model.screenshot);
+const projectModels = catalog.find(
+  (project) => project.id === "rainy-ramen",
+)!.models;
+// Exercise the reference set without assuming future contributions keep the
+// project at four captures or leave other projects without screenshots.
+const models = projectModels.filter((model) =>
+  [
+    "deepseek-v4.1-flash",
+    "gpt-6-astra-xhigh",
+    "grok-4-7-xhigh",
+    "swe-2-max",
+  ].includes(model.id),
+);
 
 test("selection survives metadata filtering and can be removed while hidden", async ({
   page,
@@ -34,9 +44,23 @@ test("selection survives metadata filtering and can be removed while hidden", as
   await expect(download).toBeDisabled();
   await page.getByRole("button", { name: "Clear filters" }).click();
   await page.getByRole("searchbox").fill("OpenAI");
-  await expect(page.locator(".model-card")).toHaveCount(1);
+  await expect(page.locator(".model-card")).toHaveCount(
+    projectModels.filter((model) =>
+      [model.name, model.provider, model.reasoning, model.harness]
+        .join(" ")
+        .toLowerCase()
+        .includes("openai"),
+    ).length,
+  );
   await page.getByRole("searchbox").fill("xhigh");
-  await expect(page.locator(".model-card")).toHaveCount(2);
+  await expect(page.locator(".model-card")).toHaveCount(
+    projectModels.filter((model) =>
+      [model.name, model.provider, model.reasoning, model.harness]
+        .join(" ")
+        .toLowerCase()
+        .includes("xhigh"),
+    ).length,
+  );
   await page.getByRole("button", { name: "Clear selection" }).click();
   await expect(page.getByRole("status")).toHaveText("0 selected");
 });
@@ -131,11 +155,14 @@ test("downloads the four actual captures in a 2400-square sheet", async ({
 test("missing captures cannot be selected and failed loads abort the whole export", async ({
   page,
 }) => {
-  await page.goto("/en/projects/pelican-cycle/");
-  for (const checkbox of await page.getByRole("checkbox").all())
-    await expect(checkbox).toBeDisabled();
   await page.route(`**${models[0].screenshot}`, (route) => route.abort());
   await page.goto("/en/projects/rainy-ramen/");
+  await expect(
+    page.getByRole("checkbox", {
+      name: "No screenshot available: E2E fixture",
+      exact: true,
+    }),
+  ).toBeDisabled();
   for (const model of models.slice(0, 2))
     await page
       .getByRole("checkbox", {
