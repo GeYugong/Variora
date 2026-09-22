@@ -132,6 +132,55 @@ async function copyAssets(source, destination) {
   }
 }
 
+// Only raster captures are exported: SVG may contain active or external content.
+const screenshotExtensions = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+async function copyScreenshot(modelRoot, destination, url) {
+  const configText = await readOptional(
+    path.join(modelRoot, "comparison.json"),
+  );
+  let relative;
+  if (configText) {
+    const config = JSON.parse(configText);
+    if (config.screenshot === null) return null;
+    relative = config.screenshot;
+  } else {
+    let entries;
+    try {
+      entries = await readdir(path.join(modelRoot, "screenshots"), {
+        withFileTypes: true,
+      });
+    } catch (error) {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    }
+    const names = entries
+      .filter(
+        (entry) =>
+          !entry.name.startsWith(".") &&
+          (entry.isFile() || entry.isSymbolicLink()) &&
+          screenshotExtensions.has(path.extname(entry.name).toLowerCase()),
+      )
+      .map((entry) => entry.name)
+      .sort();
+    const preferred = ["illustration", "scene", "preview", "desktop"];
+    const name =
+      preferred
+        .map((stem) => names.find((name) => path.parse(name).name === stem))
+        .find(Boolean) ?? names[0];
+    if (!name) return null;
+    relative = `screenshots/${name}`;
+  }
+  const source = await resolveInside(modelRoot, relative);
+  const extension = path.extname(source).toLowerCase();
+  if (!screenshotExtensions.has(extension) || !(await stat(source)).isFile())
+    throw new Error(
+      `Comparison screenshot must be a raster image: ${relative}`,
+    );
+  await mkdir(destination, { recursive: true });
+  await cp(source, path.join(destination, `screenshot${extension}`));
+  return `${url}/screenshot${extension}`;
+}
+
 export async function buildCatalog(projectsRoot, publicRoot) {
   const provenance = createProvenanceReader();
   const previewsRoot = path.join(publicRoot, "previews");
@@ -192,6 +241,11 @@ export async function buildCatalog(projectsRoot, publicRoot) {
         harness: field(record, "Harness"),
         ...(await provenance(modelRoot)),
         preview,
+        screenshot: await copyScreenshot(
+          modelRoot,
+          path.join(previewsRoot, "_comparisons", id, modelId),
+          `/previews/_comparisons/${encodeURIComponent(id)}/${encodeURIComponent(modelId)}`,
+        ),
       });
     }
     projects.push({

@@ -11,6 +11,7 @@ export type Model = {
   author: { name: string; login: string | null } | null;
   commit: string | null;
   preview: string | null;
+  screenshot: string | null;
 };
 export type Project = {
   id: string;

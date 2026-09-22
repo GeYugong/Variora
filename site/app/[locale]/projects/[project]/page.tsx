@@ -1,13 +1,8 @@
+import { Implementations } from "@/components/implementations";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  projects,
-  projectSource,
-  modelSource,
-  summary,
-  repository,
-} from "@/lib/catalog";
+import { projects, projectSource, summary } from "@/lib/catalog";
 import { locales, messages, type Locale } from "@/lib/i18n";
 import { Artwork } from "@/components/artwork";
 import { Arrow } from "@/components/icons";
@@ -110,81 +105,7 @@ export default async function ProjectPage({
             </a>
           </div>
         ) : (
-          <div className="model-grid">
-            {project.models.map((model) => (
-              <article key={model.id} className="model-card">
-                <h3>{model.name}</h3>
-                <dl>
-                  <div>
-                    <dt>{t.provider}</dt>
-                    <dd>{model.provider || t.unspecified}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.reasoning}</dt>
-                    <dd>{model.reasoning || t.unspecified}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.harness}</dt>
-                    <dd>{model.harness || t.unspecified}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.firstCommitted}</dt>
-                    <dd>
-                      {model.firstCommittedAt && model.commit ? (
-                        <a
-                          href={`${repository}/commit/${model.commit}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <time dateTime={model.firstCommittedAt}>
-                            {model.firstCommittedAt.slice(0, 10)}
-                          </time>
-                        </a>
-                      ) : (
-                        t.unspecified
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t.author}</dt>
-                    <dd>
-                      {model.author?.login ? (
-                        <a
-                          href={`https://github.com/${model.author.login}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          @{model.author.login}
-                        </a>
-                      ) : (
-                        model.author?.name || t.unspecified
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-                <div className="model-actions">
-                  {model.preview && (
-                    <Link
-                      className="button primary"
-                      href={`/${locale}/preview/?project=${encodeURIComponent(project.id)}&model=${encodeURIComponent(model.id)}`}
-                    >
-                      {t.preview}
-                      <Arrow />
-                    </Link>
-                  )}
-                  <a
-                    className="text-link"
-                    href={modelSource(project, model)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t.record}
-                    <Arrow diagonal />
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+          <Implementations key={project.id} project={project} locale={locale} />
         )}
       </section>
     </main>

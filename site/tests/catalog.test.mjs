@@ -5,6 +5,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  symlink,
   rm,
   writeFile,
 } from "node:fs/promises";
@@ -36,6 +37,76 @@ test("discovers projects without implementations and uses the prompt as fallback
   assert.equal(project.description, "Make a scene.");
   assert.deepEqual(project.models, []);
 });
+
+test("chooses representative screenshots deterministically and copies original bytes", async (t) => {
+  const f = await fixture(t, {
+    ...base,
+    "projects/example/models/demo/screenshots/desktop.png": "desktop",
+    "projects/example/models/demo/screenshots/illustration.png":
+      "original capture",
+    "projects/example/models/demo/screenshots/scene.png": "scene",
+  });
+  const [project] = await buildCatalog(f.projects, f.public);
+  assert.equal(
+    project.models[0].screenshot,
+    "/previews/_comparisons/example/demo/screenshot.png",
+  );
+  assert.equal(
+    await readFile(path.join(f.public, project.models[0].screenshot), "utf8"),
+    "original capture",
+  );
+});
+
+test("supports explicit screenshot choices and disabling automatic selection", async (t) => {
+  const f = await fixture(t, {
+    ...base,
+    "projects/example/models/demo/comparison.json":
+      '{"screenshot":"captures/a b.webp"}',
+    "projects/example/models/demo/captures/a b.webp": "chosen",
+    "projects/example/models/disabled/comparison.json": '{"screenshot":null}',
+    "projects/example/models/disabled/screenshots/preview.png": "disabled",
+  });
+  const [project] = await buildCatalog(f.projects, f.public);
+  assert.equal(
+    project.models[0].screenshot,
+    "/previews/_comparisons/example/demo/screenshot.webp",
+  );
+  assert.equal(project.models[1].screenshot, null);
+});
+
+for (const screenshot of [
+  "../../PROMPT.md",
+  "screenshots/active.svg",
+  "screenshots/missing.png",
+  "screenshots",
+  42,
+  undefined,
+]) {
+  test(`rejects invalid comparison image: ${screenshot}`, async (t) => {
+    const f = await fixture(t, {
+      ...base,
+      "projects/example/models/demo/comparison.json": JSON.stringify({
+        screenshot,
+      }),
+      "projects/example/models/demo/screenshots/active.svg": "<svg/>",
+    });
+    await assert.rejects(buildCatalog(f.projects, f.public));
+  });
+}
+
+test("rejects screenshot symlinks outside the submitting model", async (t) => {
+  const f = await fixture(t, {
+    ...base,
+    "projects/example/models/demo/README.md": "# Demo",
+    "outside/scene.png": "outside",
+  });
+  await symlink(
+    path.join(f.root, "outside"),
+    path.join(f.projects, "example/models/demo/screenshots"),
+    "junction",
+  );
+  await assert.rejects(buildCatalog(f.projects, f.public), /symlink escapes/);
+});
 test("copies relative assets, parses model records, and excludes local config", async (t) => {
   const f = await fixture(t, {
     ...base,
@@ -59,6 +130,7 @@ test("copies relative assets, parses model records, and excludes local config", 
     author: null,
     commit: null,
     preview: "/previews/example/demo/index.html",
+    screenshot: null,
   });
   assert.match(
     await readFile(

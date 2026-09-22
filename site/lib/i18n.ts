@@ -62,6 +62,20 @@ const en = {
   loading: "Loading preview…",
   fullscreenError: "Full screen is unavailable in this browser.",
   comments: "Comments",
+  searchModels: "Find a model, provider, or reasoning level",
+  selectedCount: "{count} selected",
+  clearSelection: "Clear selection",
+  downloadComparison: "Download comparison PNG",
+  exporting: "Exporting…",
+  exportError:
+    "Could not export all screenshots. Try again or remove the affected model:",
+  selectComparison: "Select for comparison",
+  noScreenshot: "No screenshot available",
+  comparisonHint:
+    "Select 2–8 implementations. Hidden selections stay included; exports follow the model list order.",
+  selectedModels: "Selected models",
+  removeSelection: "Remove selection",
+  noModels: "No implementations match your search.",
 };
 export type Messages = typeof en;
 
@@ -118,6 +132,19 @@ export const messages: Record<Locale, Messages> = {
     loading: "正在加载预览…",
     fullscreenError: "此浏览器暂不支持全屏。",
     comments: "评论",
+    searchModels: "搜索模型、提供商或推理强度",
+    selectedCount: "已选 {count} 项",
+    clearSelection: "清空选择",
+    downloadComparison: "下载对比图 PNG",
+    exporting: "正在导出…",
+    exportError: "无法导出全部截图，请重试或移除出错的模型：",
+    selectComparison: "加入对比",
+    noScreenshot: "暂无截图",
+    comparisonHint:
+      "选择 2–8 份实现。筛选隐藏的选项仍会导出，排列顺序与模型列表一致。",
+    selectedModels: "已选模型",
+    removeSelection: "移除选择",
+    noModels: "没有符合条件的实现。",
   },
   ja: {
     projects: "プロジェクト",
@@ -171,6 +198,20 @@ export const messages: Record<Locale, Messages> = {
     loading: "プレビューを読み込み中…",
     fullscreenError: "このブラウザーでは全画面表示を利用できません。",
     comments: "コメント",
+    searchModels: "モデル・プロバイダー・推論強度を検索",
+    selectedCount: "{count} 件選択中",
+    clearSelection: "選択を解除",
+    downloadComparison: "比較画像をダウンロード（PNG）",
+    exporting: "書き出し中…",
+    exportError:
+      "すべての画像を書き出せませんでした。再試行するか、該当モデルを外してください：",
+    selectComparison: "比較に追加",
+    noScreenshot: "スクリーンショットなし",
+    comparisonHint:
+      "2～8 件を選択してください。非表示の選択も含まれ、モデル一覧の順に出力されます。",
+    selectedModels: "選択したモデル",
+    removeSelection: "選択から外す",
+    noModels: "条件に合う実装がありません。",
   },
   ko: {
     projects: "프로젝트",
@@ -224,5 +265,19 @@ export const messages: Record<Locale, Messages> = {
     loading: "미리보기를 불러오는 중…",
     fullscreenError: "이 브라우저에서는 전체 화면을 사용할 수 없습니다.",
     comments: "댓글",
+    searchModels: "모델, 제공업체 또는 추론 강도 검색",
+    selectedCount: "{count}개 선택됨",
+    clearSelection: "선택 해제",
+    downloadComparison: "비교 이미지 PNG 다운로드",
+    exporting: "내보내는 중…",
+    exportError:
+      "모든 스크린샷을 내보내지 못했습니다. 다시 시도하거나 해당 모델을 제외하세요:",
+    selectComparison: "비교에 추가",
+    noScreenshot: "스크린샷 없음",
+    comparisonHint:
+      "2–8개 구현을 선택하세요. 필터로 숨겨진 선택도 모델 목록 순서대로 내보냅니다.",
+    selectedModels: "선택한 모델",
+    removeSelection: "선택에서 제외",
+    noModels: "검색 조건에 맞는 구현이 없습니다.",
   },
 };
