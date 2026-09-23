@@ -34,4 +34,6 @@ Original generation prompt:
 
 > 创建一个HTML，内容是SVG绘制一个鹈鹕骑自行车的2D动画，你不需要任何测试
 
-No automated tests, browser inspection, visual checks, or site build were run. The original prompt explicitly said tests were unnecessary. Rendering, animation controls, mobile layout, and browser compatibility remain unverified. No screenshots or performance measurements were captured.
+No automated tests, browser inspection, visual checks, or site build were run. The original prompt explicitly said tests were unnecessary. Rendering, animation controls, mobile layout, and browser compatibility remain unverified. No screenshots or performance measurements were captured at submission time.
+
+`screenshots/scene.png` was captured later by the maintainer (headless Chromium, 1600x1000) for the site's comparison feature; it shows the original unmodified implementation.

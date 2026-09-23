@@ -23,4 +23,4 @@ This implementation was generated on 2026-09-20 in one attempt and imported unch
 
 > 建一个HTML，内容是SVG绘制一个鹈鹕骑自行车的2D动画。你的工作文件夹是：【redacted local path】禁止读取或编辑除此以外的任何文件夹
 
-The imported file was checked byte-for-byte against the supplied original. No automated tests were added; the generated app was preserved without edits.
+The imported file was checked byte-for-byte against the supplied original. No automated tests were added; the generated app was preserved without edits. `screenshots/scene.png` was captured later by the maintainer (headless Chromium, 1600x1000) for the site's comparison feature; it shows the original unmodified implementation.

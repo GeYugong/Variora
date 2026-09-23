@@ -36,4 +36,6 @@ Original generation prompt:
 
 The source was inspected for packaging. No automated tests, browser inspection, or visual checks were run on this implementation during submission. Checks performed during the original generation are unknown. Its rendering, animation behavior, mobile layout, and browser compatibility remain unverified.
 
+`screenshots/scene.png` was captured later by the maintainer (headless Chromium, 1600x1000) for the site's comparison feature; it shows the original unmodified implementation. In current browsers the CSS animations override the SVG placement attributes, so the pelican and wheels render outside the visible scene — the capture reflects that output as submitted.
+
 The shared project cover is separate CSS/SVG artwork authored during submission. It is not a screenshot or output of this model.
