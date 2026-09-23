@@ -27,21 +27,11 @@ Previews run in an iframe that permits scripts, pointer lock, and fullscreen whi
 
 ## Model comparison images
 
-Project pages with more than two implementations can be searched by model name,
-provider, reasoning level, and harness. When at least two implementations have a
-screenshot, their cards get a **Compare** toggle. Selecting any opens a selection
-bar; with 2–8 selected it downloads a PNG made from their original screenshots.
-Selections survive filtering, and the bar reports how many the current search hides.
-
-The export is 2400 px wide and follows the active light or dark theme through the
-design tokens. It shows the Variora mark and domain, the project title with a
-localized model count, and equal 16:10 frames: 2 → 2 × 1, 3 → 3 × 1, 4 → 2 × 2
-(2400 × 2135), and 5–8 → three columns with a centered last row. Each capture is
-contained without cropping, and a blurred copy of it fills the rest of the frame.
-Captions show the catalog model name, the reasoning effort as a badge (omitted when
-missing), and the provider, which is dropped before a long name would shrink.
-Exports use catalog order. Any screenshot loading failure aborts the entire export
-and identifies the model.
+Project pages can be searched by model name, provider, reasoning level, and
+harness. When at least two implementations have a screenshot, their cards offer
+a **Compare** toggle; selecting 2–8 downloads a themed PNG sheet composed
+locally in the browser from the original captures. The layout and caption rules
+live in [lib/comparison.ts](lib/comparison.ts).
 
 The catalog selects a PNG, JPG, JPEG, or WebP directly under a model's
 `screenshots/` directory. It prefers the stems `illustration`, `scene`, `preview`,
@@ -57,8 +47,7 @@ after resolving symlinks. Invalid explicit configuration fails the build. Use
 `{ "screenshot": null }` to opt out. Models without a capture remain browsable
 but cannot be selected. The pipeline copies only the chosen file under
 `public/previews/_comparisons/`; original captures are never changed. These are
-stored captures, not live screenshots of the running iframe. No conceptual cover
-art or generated substitute is used. PNG export happens locally in the browser.
+stored captures, not live screenshots of the running iframe.
 
 ## Languages and themes
 
