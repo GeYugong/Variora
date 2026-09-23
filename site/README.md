@@ -27,13 +27,21 @@ Previews run in an iframe that permits scripts, pointer lock, and fullscreen whi
 
 ## Model comparison images
 
-Project pages search model names, providers, reasoning levels, and harnesses.
-Select 2–8 implementations to download a PNG made from their original screenshots.
-Selections survive filtering and can be removed individually from the selected-model
-list. Exports use catalog order, equal frames, and uncropped images. Four models
-produce a 2400 × 2400 sheet with 1136 × 830 image frames; other counts use two
-columns and as many rows as needed. Missing reasoning is omitted from captions.
-Any screenshot loading failure aborts the entire export and identifies the model.
+Project pages with more than two implementations can be searched by model name,
+provider, reasoning level, and harness. When at least two implementations have a
+screenshot, their cards get a **Compare** toggle. Selecting any opens a selection
+bar; with 2–8 selected it downloads a PNG made from their original screenshots.
+Selections survive filtering, and the bar reports how many the current search hides.
+
+The export is 2400 px wide and follows the active light or dark theme through the
+design tokens. It shows the Variora mark and domain, the project title with a
+localized model count, and equal 16:10 frames: 2 → 2 × 1, 3 → 3 × 1, 4 → 2 × 2
+(2400 × 2135), and 5–8 → three columns with a centered last row. Each capture is
+contained without cropping, and a blurred copy of it fills the rest of the frame.
+Captions show the catalog model name, the reasoning effort as a badge (omitted when
+missing), and the provider, which is dropped before a long name would shrink.
+Exports use catalog order. Any screenshot loading failure aborts the entire export
+and identifies the model.
 
 The catalog selects a PNG, JPG, JPEG, or WebP directly under a model's
 `screenshots/` directory. It prefers the stems `illustration`, `scene`, `preview`,

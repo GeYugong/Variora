@@ -322,6 +322,10 @@ svg {
 .button.primary:hover {
   opacity: 0.87;
 }
+.button:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -564,59 +568,8 @@ svg {
 }
 .model-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 22px;
-}
-.comparison-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-.comparison-controls .search {
-  flex: 1 1 260px;
-  min-width: 0;
-}
-.comparison-controls p,
-.comparison-hint {
-  font-size: 12px;
-  color: var(--muted);
-}
-.comparison-hint {
-  margin-block: 12px 20px;
-}
-.comparison-chosen {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin-bottom: 20px;
-}
-.comparison-chosen .button {
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-.comparison-thumbnail {
-  display: block;
-  width: 100%;
-  height: 180px;
-  object-fit: contain;
-  background: var(--soft);
-  border-radius: var(--radius-md);
-  margin-block: 16px;
-}
-.comparison-select {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  margin-block: 16px;
-}
-.comparison-select input {
-  accent-color: var(--ink);
-  width: 18px;
-  height: 18px;
 }
 .model-card {
   border: 1px solid var(--line);
@@ -624,11 +577,148 @@ svg {
   border-radius: var(--radius-lg);
   padding: 27px;
   min-width: 0;
+  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.model-card[data-selected] {
+  border-color: var(--ink);
+  box-shadow: var(--ring);
+}
+.model-shot {
+  display: block;
+  width: calc(100% + 54px);
+  max-width: none;
+  margin: -27px -27px 24px;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--soft);
+  border-bottom: 1px solid var(--line);
+}
+.model-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 .model-card h3 {
   font-size: 22px;
   overflow-wrap: anywhere;
   line-height: 1.3;
+  margin-bottom: 0;
+  min-width: 0;
+}
+.compare-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.compare-toggle:hover {
+  border-color: var(--muted);
+  color: var(--ink);
+}
+.compare-toggle input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.compare-toggle:has(input:focus-visible) {
+  border-color: var(--ink);
+  box-shadow: var(--ring);
+}
+.compare-toggle:has(input:checked) {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.compare-toggle:has(input:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+.compare-box {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius-sm);
+  color: transparent;
+}
+.compare-box svg {
+  width: 10px;
+  height: 10px;
+}
+.compare-toggle:has(input:checked) .compare-box {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+.compare-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  width: min(640px, 100%);
+  margin: 22px auto 0;
+  padding: 8px 8px 8px 18px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.compare-bar p {
+  margin: 0;
+  font-size: 12px;
+}
+.compare-bar [role="status"] {
+  flex: 1 1 auto;
+  color: var(--ink);
+}
+.compare-bar [role="alert"] {
+  order: 3;
+  flex-basis: 100%;
+  padding-bottom: 4px;
+  color: var(--ink);
+}
+.compare-bar > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.compare-clear {
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+}
+.compare-clear:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+.compare-bar .button {
+  min-height: 0;
+  padding: 7px 14px;
+  font-size: 12px;
 }
 .model-card dl {
   margin-bottom: 30px;
@@ -910,6 +1000,19 @@ svg {
   }
   .implementations {
     padding-top: 32px;
+  }
+  .implementations .section-heading .search {
+    margin-top: 18px;
+  }
+  .compare-bar {
+    bottom: 12px;
+    padding: 10px 10px 10px 14px;
+  }
+  .compare-bar > div {
+    width: 100%;
+  }
+  .compare-bar .button {
+    flex: 1;
   }
   .empty-state {
     padding: 40px 20px;

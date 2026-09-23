@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures/giscus";
+import type { Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import catalog from "../../.generated/catalog.json";
 
@@ -15,96 +16,104 @@ const models = projectModels.filter((model) =>
     "swe-2-max",
   ].includes(model.id),
 );
-
-test("selection survives metadata filtering and can be removed while hidden", async ({
-  page,
-}) => {
-  await page.goto("/en/projects/rainy-ramen/");
-  const download = page.getByRole("button", {
-    name: "Download comparison PNG",
-  });
-  await expect(download).toBeDisabled();
-  for (const model of models.slice(0, 2))
-    await page
-      .getByRole("checkbox", {
-        name: `Select for comparison: ${model.name}`,
-        exact: true,
-      })
-      .check();
-  await page.getByRole("searchbox").fill("no-such-model");
-  await expect(page.locator(".model-card")).toHaveCount(0);
-  await expect(page.getByRole("status")).toHaveText("2 selected");
-  await expect(download).toBeEnabled();
-  await page
-    .getByRole("button", {
-      name: `Remove selection: ${models[0].name}`,
-      exact: true,
-    })
-    .click();
-  await expect(download).toBeDisabled();
-  await page.getByRole("button", { name: "Clear filters" }).click();
-  await page.getByRole("searchbox").fill("OpenAI");
-  await expect(page.locator(".model-card")).toHaveCount(
-    projectModels.filter((model) =>
-      [model.name, model.provider, model.reasoning, model.harness]
-        .join(" ")
-        .toLowerCase()
-        .includes("openai"),
-    ).length,
+const matching = (query: string) =>
+  projectModels.filter((model) =>
+    [model.name, model.provider, model.reasoning, model.harness]
+      .join(" ")
+      .toLowerCase()
+      .includes(query.toLowerCase()),
   );
-  await page.getByRole("searchbox").fill("xhigh");
-  await expect(page.locator(".model-card")).toHaveCount(
-    projectModels.filter((model) =>
-      [model.name, model.provider, model.reasoning, model.harness]
-        .join(" ")
-        .toLowerCase()
-        .includes("xhigh"),
-    ).length,
-  );
-  await page.getByRole("button", { name: "Clear selection" }).click();
-  await expect(page.getByRole("status")).toHaveText("0 selected");
-});
+const toggle = (page: Page, name: string) =>
+  page.getByRole("checkbox", { name: `Compare: ${name}`, exact: true });
 
-test("downloads the four actual captures in a 2400-square sheet", async ({
-  page,
-}, testInfo) => {
-  await page.goto("/en/projects/rainy-ramen/");
-  // Record the Canvas boundary as well as inspecting the actual encoded PNG.
+type Calls = {
+  captures: number[][];
+  sheets: string[];
+  labels: string[];
+};
+// Record the Canvas boundary as well as inspecting the actual encoded PNG.
+async function recordCanvas(page: Page) {
   await page.evaluate(() => {
-    const calls: { images: number[][]; labels: string[] } = {
-      images: [],
-      labels: [],
-    };
+    const calls: Calls = { captures: [], sheets: [], labels: [] };
     Object.assign(window, { comparisonCalls: calls });
-    const draw = CanvasRenderingContext2D.prototype.drawImage;
-    CanvasRenderingContext2D.prototype.drawImage = function (
-      ...args: [CanvasImageSource, ...number[]]
-    ) {
-      const image = args[0] as HTMLImageElement;
-      calls.images.push([
-        image.naturalWidth,
-        image.naturalHeight,
-        ...(args.slice(1) as number[]),
-      ]);
+    const proto = CanvasRenderingContext2D.prototype;
+    const draw = proto.drawImage;
+    // Only draws onto the exported sheet; blur steps use smaller canvases.
+    proto.drawImage = function (...args: [CanvasImageSource, ...number[]]) {
+      if (args[0] instanceof HTMLImageElement && this.canvas.width === 2400)
+        calls.captures.push([
+          args[0].naturalWidth,
+          args[0].naturalHeight,
+          ...(args.slice(1) as number[]),
+        ]);
       return Reflect.apply(draw, this, args);
     };
-    const text = CanvasRenderingContext2D.prototype.fillText;
-    CanvasRenderingContext2D.prototype.fillText = function (
-      ...args: Parameters<typeof text>
-    ) {
+    const fill = proto.fillRect;
+    proto.fillRect = function (...args: Parameters<typeof fill>) {
+      if (this.canvas.width === 2400 && !calls.sheets.length)
+        calls.sheets.push(String(this.fillStyle));
+      return Reflect.apply(fill, this, args);
+    };
+    const text = proto.fillText;
+    proto.fillText = function (...args: Parameters<typeof text>) {
       calls.labels.push(args[0]);
       return Reflect.apply(text, this, args);
     };
   });
+}
+const readCalls = (page: Page) =>
+  page.evaluate(
+    () => (window as unknown as { comparisonCalls: Calls }).comparisonCalls,
+  );
+
+test("selection survives filtering and reports hidden selections", async ({
+  page,
+}) => {
+  await page.goto("/en/projects/rainy-ramen/");
+  const bar = page.locator(".compare-bar");
+  await expect(bar).toHaveCount(0);
+  await toggle(page, models[0].name).check();
+  await expect(bar.getByRole("status")).toHaveText(
+    "1 selected · pick 2–8 to export",
+  );
+  const download = bar.getByRole("button", { name: "Download PNG" });
+  await expect(download).toBeDisabled();
+  await toggle(page, models[1].name).check();
+  await expect(download).toBeEnabled();
+  await expect(
+    page.locator(".model-card[data-selected]").first(),
+  ).toContainText(models[0].name);
+
+  await page.getByRole("searchbox").fill("no-such-model");
+  await expect(page.locator(".model-card")).toHaveCount(0);
+  await expect(bar.getByRole("status")).toHaveText(
+    "2 selected · 2 hidden by search",
+  );
+  await expect(download).toBeEnabled();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  for (const query of ["OpenAI", "xhigh"]) {
+    await page.getByRole("searchbox").fill(query);
+    await expect(page.locator(".model-card")).toHaveCount(
+      matching(query).length,
+    );
+  }
+  await toggle(page, models[1].name).uncheck();
+  await expect(download).toBeDisabled();
+  await bar.getByRole("button", { name: "Clear" }).click();
+  await expect(bar).toHaveCount(0);
+});
+
+test("downloads the four actual captures as a theme-aware sheet", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/en/projects/rainy-ramen/");
+  await recordCanvas(page);
   for (const model of [...models].reverse())
-    await page
-      .getByRole("checkbox", {
-        name: `Select for comparison: ${model.name}`,
-        exact: true,
-      })
-      .check();
+    await toggle(page, model.name).check();
   await page.getByRole("searchbox").fill("OpenAI");
-  await expect(page.getByRole("status")).toHaveText("4 selected");
+  await expect(page.locator(".compare-bar [role=status]")).toHaveText(
+    `4 selected · ${4 - models.filter((model) => matching("OpenAI").includes(model)).length} hidden by search`,
+  );
   await page.screenshot({
     path: testInfo.outputPath("comparison-page.png"),
     fullPage: true,
@@ -115,41 +124,61 @@ test("downloads the four actual captures in a 2400-square sheet", async ({
     ),
   ).toBe(true);
   const downloaded = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download comparison PNG" }).click();
+  await page.getByRole("button", { name: "Download PNG" }).click();
   const download = await downloaded;
   expect(download.suggestedFilename()).toBe("rainy-ramen-comparison.png");
   await download.saveAs(testInfo.outputPath("comparison.png"));
   const bytes = await readFile(testInfo.outputPath("comparison.png"));
   expect(bytes.subarray(1, 4).toString()).toBe("PNG");
   expect(bytes.readUInt32BE(16)).toBe(2400);
-  expect(bytes.readUInt32BE(20)).toBe(2400);
-  const calls = await page.evaluate(
-    () =>
-      (
-        window as unknown as {
-          comparisonCalls: { images: number[][]; labels: string[] };
-        }
-      ).comparisonCalls,
-  );
-  expect(calls.images).toHaveLength(4);
-  for (const [width, height, x, y, w, h] of calls.images) {
+  expect(bytes.readUInt32BE(20)).toBe(2135);
+  const calls = await readCalls(page);
+  expect(calls.sheets).toEqual(["#ffffff"]);
+  expect(calls.captures).toHaveLength(4);
+  for (const [width, height, x, y, w, h] of calls.captures) {
     expect(w / h).toBeCloseTo(width / height, 5);
-    expect(w).toBeLessThanOrEqual(1136);
-    expect(h).toBeLessThanOrEqual(830);
-    expect(x).toBeGreaterThanOrEqual(48);
-    expect(y).toBeGreaterThanOrEqual(400);
+    expect(w).toBeLessThanOrEqual(1052);
+    expect(h).toBeLessThanOrEqual(657.5);
+    expect(x).toBeGreaterThanOrEqual(120);
+    expect(y).toBeGreaterThanOrEqual(498);
   }
   expect(calls.labels.filter(Boolean)).toEqual([
     "Variora",
-    "DeepSeek V4.1 Flash",
-    "GPT-6 Astra",
-    "xhigh",
-    "Grok 4.7",
-    "xhigh",
-    "SWE-2",
-    "max",
     "variora.fog.moe",
+    "Rainy Ramen",
+    "4 models · one prompt",
+    ...models.flatMap((model) =>
+      [model.name, model.reasoning.toLowerCase(), model.provider].filter(
+        Boolean,
+      ),
+    ),
   ]);
+});
+
+test("exports follow the dark theme", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("variora-theme", "dark"));
+  await page.goto("/en/projects/rainy-ramen/");
+  await recordCanvas(page);
+  for (const model of models.slice(0, 2))
+    await toggle(page, model.name).check();
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PNG" }).click();
+  await downloaded;
+  expect((await readCalls(page)).sheets).toEqual(["#000000"]);
+});
+
+test("projects without two captures hide the comparison controls", async ({
+  page,
+}) => {
+  const bare = catalog.find(
+    (project) =>
+      project.models.length > 0 &&
+      project.models.filter((model) => model.screenshot).length < 2,
+  );
+  test.skip(!bare, "every project currently has at least two captures");
+  await page.goto(`/en/projects/${bare!.id}/`);
+  await expect(page.locator(".model-card").first()).toBeVisible();
+  await expect(page.locator(".compare-toggle")).toHaveCount(0);
 });
 
 test("missing captures cannot be selected and failed loads abort the whole export", async ({
@@ -158,33 +187,27 @@ test("missing captures cannot be selected and failed loads abort the whole expor
   await page.route(`**${models[0].screenshot}`, (route) => route.abort());
   await page.goto("/en/projects/rainy-ramen/");
   await expect(
-    page.getByRole("checkbox", {
-      name: "No screenshot available: E2E fixture",
-      exact: true,
-    }),
-  ).toBeDisabled();
+    page
+      .locator(".model-card")
+      .filter({ hasText: "E2E fixture" })
+      .locator(".compare-toggle"),
+  ).toHaveCount(0);
   for (const model of models.slice(0, 2))
-    await page
-      .getByRole("checkbox", {
-        name: `Select for comparison: ${model.name}`,
-        exact: true,
-      })
-      .check();
+    await toggle(page, model.name).check();
   const downloads: string[] = [];
   page.on("download", (download) =>
     downloads.push(download.suggestedFilename()),
   );
-  await page.getByRole("button", { name: "Download comparison PNG" }).click();
+  const button = page.getByRole("button", { name: "Download PNG" });
+  await button.click();
   await expect(page.locator(".implementations [role=alert]")).toContainText(
     models[0].name,
   );
-  await expect(
-    page.getByRole("button", { name: "Download comparison PNG" }),
-  ).toBeEnabled();
+  await expect(button).toBeEnabled();
   expect(downloads).toEqual([]);
   await page.unroute(`**${models[0].screenshot}`);
   const retried = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download comparison PNG" }).click();
+  await button.click();
   await retried;
   await expect(page.locator(".implementations [role=alert]")).toHaveCount(0);
 });

@@ -84,26 +84,28 @@ export default async function ProjectPage({
         </div>
       </section>
       <section className="implementations">
-        <div className="section-heading">
-          <h2>{t.implementations}</h2>
-        </div>
         {project.models.length === 0 ? (
-          <div className="empty-state">
-            <span className="empty-orbit" aria-hidden="true">
-              <Arrow diagonal />
-            </span>
-            <h3>{t.emptyTitle}</h3>
-            <p>{t.emptyBody}</p>
-            <a
-              className="text-link"
-              href={`${projectSource(project)}/PROMPT.md`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t.sharedPrompt}
-              <Arrow diagonal />
-            </a>
-          </div>
+          <>
+            <div className="section-heading">
+              <h2>{t.implementations}</h2>
+            </div>
+            <div className="empty-state">
+              <span className="empty-orbit" aria-hidden="true">
+                <Arrow diagonal />
+              </span>
+              <h3>{t.emptyTitle}</h3>
+              <p>{t.emptyBody}</p>
+              <a
+                className="text-link"
+                href={`${projectSource(project)}/PROMPT.md`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t.sharedPrompt}
+                <Arrow diagonal />
+              </a>
+            </div>
+          </>
         ) : (
           <Implementations key={project.id} project={project} locale={locale} />
         )}
